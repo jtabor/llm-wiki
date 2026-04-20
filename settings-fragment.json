@@ -1,0 +1,21 @@
+{
+  "_comment": "Merge this fragment into ~/.claude/settings.json — do not replace the whole file.",
+  "cleanupPeriodDays": 365,
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/wiki-session-token.sh" },
+          { "type": "command", "command": "~/.claude/hooks/wiki-archive-session.sh" }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/wiki-archive-session.sh" }
+        ]
+      }
+    ]
+  }
+}

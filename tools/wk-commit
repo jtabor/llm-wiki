@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${WIKI_ROOT:-}" ]; then
+    echo "Error: WIKI_ROOT is not set" >&2
+    exit 1
+fi
+
+usage() {
+    echo "Usage: wk-commit <prefix> <summary> [--session <token>]" >&2
+    echo "Prefixes: ingest update query pitfall move reflect init" >&2
+    exit 1
+}
+
+VALID_PREFIXES="ingest update query pitfall move reflect init"
+
+if [ $# -lt 2 ]; then
+    usage
+fi
+
+PREFIX="$1"
+SUMMARY="$2"
+shift 2
+SESSION_TOKEN="${WIKI_SESSION_TOKEN:-}"
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --session)
+            SESSION_TOKEN="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            usage
+            ;;
+    esac
+done
+
+# Validate prefix
+VALID=0
+for p in $VALID_PREFIXES; do
+    if [ "$PREFIX" = "$p" ]; then
+        VALID=1
+        break
+    fi
+done
+if [ "$VALID" -eq 0 ]; then
+    echo "Error: invalid prefix '$PREFIX'. Must be one of: $VALID_PREFIXES" >&2
+    exit 1
+fi
+
+# If no session token, prompt
+if [ -z "$SESSION_TOKEN" ]; then
+    read -rp "Session token (cc-...): " SESSION_TOKEN
+fi
+
+# Get touched files from git status
+TOUCHED=$(git -C "$WIKI_ROOT" status --porcelain | grep -v '^?' | awk '{print $2}' | tr '\n' ',' | sed 's/,$//')
+if [ -z "$TOUCHED" ]; then
+    TOUCHED=$(git -C "$WIKI_ROOT" status --porcelain | awk '{print $2}' | tr '\n' ',' | sed 's/,$//')
+fi
+
+MSG="${PREFIX}: ${SUMMARY}
+
+session: ${SESSION_TOKEN}
+touched: ${TOUCHED}"
+
+git -C "$WIKI_ROOT" add -A
+git -C "$WIKI_ROOT" commit -m "$MSG"

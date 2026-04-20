@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""Find a Claude Code session JSONL by token and copy it into the wiki."""
+
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Ingest a Claude Code session JSONL into the wiki.")
+    parser.add_argument("token", help="Session token (cc-<uuid> or just <uuid>)")
+    parser.add_argument("--project", help="Project name (optional, for hint)")
+    args = parser.parse_args()
+
+    wiki_root = os.environ.get("WIKI_ROOT")
+    if not wiki_root:
+        print("Error: WIKI_ROOT is not set", file=sys.stderr)
+        sys.exit(1)
+
+    token = args.token.removeprefix("cc-")
+
+    result = subprocess.run(
+        ["grep", "-rl", token,
+         str(Path.home() / ".claude/projects/"),
+         "--include=*.jsonl",
+         "--exclude=*history.jsonl"],
+        capture_output=True, text=True
+    )
+
+    matches = [line for line in result.stdout.strip().splitlines() if line]
+
+    if len(matches) == 0:
+        print(f"Error: no JSONL found containing token '{token}'", file=sys.stderr)
+        print("Has the session been active yet? Check ~/.claude/projects/", file=sys.stderr)
+        sys.exit(1)
+
+    if len(matches) > 1:
+        print(f"Error: multiple JSONLs match token '{token}':", file=sys.stderr)
+        for m in matches:
+            print(f"  {m}", file=sys.stderr)
+        sys.exit(1)
+
+    src = Path(matches[0])
+    dest_dir = Path(wiki_root) / "conversations" / "claude-code"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / f"cc-{token}.jsonl"
+
+    shutil.copy2(src, dest)
+    print(f"Ingested: {src} → {dest}")
+
+    project_hint = f" --project {args.project}" if args.project else ""
+    print(f"\nNext: have an LLM read {dest} and extract to the appropriate project pages,")
+    print(f"then: wk-commit ingest 'conversation cc-{token}'")
+
+
+if __name__ == "__main__":
+    main()

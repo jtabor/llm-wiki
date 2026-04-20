@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Create a new project scaffold inside $WIKI_ROOT.
+set -euo pipefail
+
+if [ -z "${WIKI_ROOT:-}" ]; then
+    echo "Error: WIKI_ROOT is not set" >&2
+    exit 1
+fi
+
+if [ $# -lt 1 ]; then
+    echo "Usage: wk-new-project <project-name>" >&2
+    exit 1
+fi
+
+PROJECT="$1"
+PROJ_DIR="$WIKI_ROOT/projects/$PROJECT"
+
+if [ -d "$PROJ_DIR" ]; then
+    echo "Error: $PROJ_DIR already exists" >&2
+    exit 1
+fi
+
+TODAY=$(date +%Y-%m-%d)
+
+mkdir -p "$PROJ_DIR"/{sources,concepts,codebases,analyses,raw/{papers,articles,code,assets}}
+
+cat > "$PROJ_DIR/index.md" <<EOF
+---
+type: meta
+project: $PROJECT
+created: $TODAY
+updated: $TODAY
+---
+
+# $PROJECT
+
+One-line summary.
+
+## Sources
+
+## Concepts
+
+## Codebases
+
+## Analyses
+EOF
+
+cat > "$PROJ_DIR/pitfalls.md" <<EOF
+---
+type: pitfall
+project: $PROJECT
+created: $TODAY
+updated: $TODAY
+tags: []
+---
+
+# Pitfalls — $PROJECT
+
+(none yet)
+EOF
+
+cat > "$PROJ_DIR/log.md" <<EOF
+---
+type: meta
+project: $PROJECT
+created: $TODAY
+updated: $TODAY
+---
+
+# Activity Log — $PROJECT
+
+- $TODAY — Project initialized
+EOF
+
+echo "Created $PROJ_DIR"
+echo ""
+echo "Next steps:"
+echo "  1. Edit $PROJ_DIR/index.md — fill in the one-line summary"
+echo "  2. Copy wiki-templates/bootstrap/code-repo-CLAUDE.md into your code repo's CLAUDE.md and fill it in"
+echo "  3. Add the project to \$WIKI_ROOT/index.md"
+echo "  4. Run: wk-commit init 'project $PROJECT'"
