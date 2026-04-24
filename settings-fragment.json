@@ -5,8 +5,7 @@
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "~/.claude/hooks/wiki-session-token.sh" },
-          { "type": "command", "command": "~/.claude/hooks/wiki-archive-session.sh" }
+          { "type": "command", "command": "~/.claude/hooks/wiki-session-token.sh" }
         ]
       }
     ],
@@ -14,6 +13,13 @@
       {
         "hooks": [
           { "type": "command", "command": "~/.claude/hooks/wiki-archive-session.sh" }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "cat >> /tmp/subagent-probe.json" }
         ]
       }
     ]

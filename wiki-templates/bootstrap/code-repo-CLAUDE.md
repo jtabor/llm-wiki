@@ -30,15 +30,13 @@ grep -rl "<session-id>" ~/.claude/projects/ --include="*.jsonl" --exclude="*hist
 
 ## File References
 
-All code references in wiki pages use paths relative to this repo root. Example:
-`src/drivers/dma.c::dma_init` refers to the `dma_init` symbol in that file.
-Wiki pages use `nvim://` URIs — read the nvim skill for the full format.
+All text-based file references in wiki pages use `nvim://` URIs — read the nvim skill for the full format. This applies to source code, markdown, yaml, shell scripts, config files, and logs. Use semantic anchors (`::symbol`) for code; use line numbers for files without named symbols.
+
+Examples:
+- `nvim://<project-slug>/src/drivers/dma.c::dma_init` — symbol anchor
+- `nvim://<project-slug>/CLAUDE.md` — a markdown file
+- `nvim:///absolute/path/to/config.yaml/12` — absolute path with line number
 
 ## After Feature Completion
 
-When a feature is implemented, delegate to `wiki-update` to:
-1. Update relevant codebase/concept pages with what changed
-2. Reference the conversation (by session token) where the work happened
-3. Add any new pitfalls discovered during implementation
-4. Update `projects/<name>/index.md` and `projects/<name>/log.md`
-5. Commit the wiki: `wk-commit update '<feature description>' --session cc-<token>`
+When a feature is implemented ask the user if it's time to update the wiki.  It is your job to make sure the user doesn't forget.

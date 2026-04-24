@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Handler for conv:// URIs pointing to Claude Code conversation transcripts.
+#
+# Supported forms:
+#   conv://cc-<uuid>
+#   conv://cc-<uuid>.jsonl
+#
+# Resolution order:
+#   1. $WIKI_ROOT/conversations/claude-code/cc-<uuid>.jsonl
+#   2. grep search in ~/.claude/projects/ (live/un-archived sessions)
+
+LOG=/tmp/wk-open-conv.log
+exec >> "$LOG" 2>&1
+echo "=== $(date) ==="
+echo "args: $*"
+
+# Restore display env (may be poisoned by Electron/Obsidian launcher)
+eval "$(systemctl --user show-environment | grep -E '^(DBUS_SESSION_BUS_ADDRESS|DISPLAY|WAYLAND_DISPLAY|XDG_RUNTIME_DIR)=')"
+unset SESSION_MANAGER
+
+# Resolve WIKI_ROOT: systemd env first, then shell env
+WIKI_ROOT=$(systemctl --user show-environment | grep '^WIKI_ROOT=' | cut -d= -f2-)
+if [[ -z $WIKI_ROOT ]]; then
+  # Source shell config to pick up WIKI_ROOT
+  # shellcheck disable=SC1090
+  [[ -r ~/.zshrc ]] && WIKI_ROOT=$(zsh -c 'source ~/.zshrc 2>/dev/null; echo $WIKI_ROOT')
+fi
+if [[ -z $WIKI_ROOT ]]; then
+  notify-send "wk-open-conv" "WIKI_ROOT is not set — check ~/.zshrc"
+  echo "WIKI_ROOT unset"
+  exit 1
+fi
+WIKI_ROOT=${WIKI_ROOT%/}  # strip trailing slash if any
+
+URI=$1
+
+# Strip scheme and normalize: conv://cc-<uuid> → cc-<uuid>
+token=${URI#conv://}
+token=${token%.jsonl}  # allow .jsonl suffix in URI
+
+# Strip leading cc- to get bare uuid, then reconstruct canonical form
+uuid=${token#cc-}
+canonical="cc-${uuid}"
+
+echo "token='$canonical' wiki_root='$WIKI_ROOT'"
+
+# Resolution: wiki archive first
+target="${WIKI_ROOT}/conversations/claude-code/${canonical}.jsonl"
+
+if [[ ! -f $target ]]; then
+  echo "not in wiki archive, searching ~/.claude/projects/"
+  result=$(grep -rl "$uuid" "$HOME/.claude/projects/" --include="*.jsonl" --exclude="*history.jsonl" 2>/dev/null)
+  matches=$(echo "$result" | grep -c . || true)
+  if [[ $matches -eq 0 ]]; then
+    notify-send "wk-open-conv" "Conversation not found: $canonical"
+    echo "not found"
+    exit 1
+  fi
+  if [[ $matches -gt 1 ]]; then
+    # Use most recently modified
+    target=$(echo "$result" | xargs ls -t 2>/dev/null | head -n1)
+    notify-send "wk-open-conv" "Multiple matches for $canonical — opening most recent"
+  else
+    target=$(echo "$result" | head -n1)
+  fi
+fi
+
+echo "opening: $target"
+systemd-run --user --scope --no-block /home/jtabor/tools/nvim_opener.sh +1 "$target"
+echo "exit: $?"
+echo "=== done ==="

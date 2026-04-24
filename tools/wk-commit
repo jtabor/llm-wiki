@@ -8,11 +8,22 @@ fi
 
 usage() {
     echo "Usage: wk-commit <prefix> <summary> [--session <token>]" >&2
+    echo "Commits all staged/unstaged wiki changes with a structured message." >&2
     echo "Prefixes: ingest update query pitfall move reflect init" >&2
+    echo "Options:" >&2
+    echo "  --session <token>   Session token (cc-<uuid>); falls back to \$WIKI_SESSION_TOKEN" >&2
     exit 1
 }
 
 VALID_PREFIXES="ingest update query pitfall move reflect init"
+
+if [ $# -lt 1 ]; then
+    usage
+fi
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    usage
+fi
 
 if [ $# -lt 2 ]; then
     usage

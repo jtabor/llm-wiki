@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Wiki Conv Goto
+Exec=/home/jtabor/bin/wk-open-conv %u
+MimeType=x-scheme-handler/conv;
+NoDisplay=true

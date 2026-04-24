@@ -94,6 +94,30 @@ cp agents/wiki-update.md ~/.claude/agents/
 
 ---
 
+## Step 5b — Install slash command
+
+```bash
+mkdir -p ~/.claude/commands
+cp commands/wiki-sync.md ~/.claude/commands/
+cp commands/ingest.md ~/.claude/commands/
+```
+
+`/wiki-sync` — use at the end of any coding session to record what happened into the wiki. Optionally pass a focus area:
+
+```
+/wiki-sync
+/wiki-sync focus on the DMA refactor
+```
+
+`/ingest <file>` — ingest a single file (paper, article, code, notes) into the wiki. Walks you through focus, project selection, placement, contradiction checks, and delegates writing to `wiki-update`.
+
+```
+/ingest ~/Downloads/rtos-survey-2024.pdf
+/ingest src/drivers/dma.c project=motor-controller
+```
+
+---
+
 ## Step 6 — Bootstrap the wiki
 
 ```bash
@@ -137,6 +161,15 @@ cp $REPO/tools/wk-commit      $WIKI_ROOT/tools/wk-commit
 cp $REPO/tools/wk-ingest-cc   $WIKI_ROOT/tools/wk-ingest-cc
 cp $REPO/tools/wk-new-project $WIKI_ROOT/tools/wk-new-project
 chmod +x $WIKI_ROOT/tools/wk-*
+```
+
+Install the `conv://` URI handler (opens conversation transcripts in nvim):
+
+```bash
+cp $REPO/tools/wk-open-conv ~/bin/wk-open-conv
+chmod +x ~/bin/wk-open-conv
+cp $REPO/install/wk-conv-goto.desktop ~/.local/share/applications/
+xdg-mime default wk-conv-goto.desktop x-scheme-handler/conv
 ```
 
 Initial commit:
@@ -197,10 +230,17 @@ llm-wiki/
 │   ├── wiki-read.md                # → ~/.claude/agents/
 │   └── wiki-update.md              # → ~/.claude/agents/
 │
-├── tools/                          # → $WIKI_ROOT/tools/
+├── commands/
+│   └── wiki-sync.md                # → ~/.claude/commands/  (/wiki-sync slash command)
+│
+├── install/
+│   └── wk-conv-goto.desktop        # → ~/.local/share/applications/ (conv:// URI handler)
+│
+├── tools/                          # → $WIKI_ROOT/tools/ (and ~/bin/ for URI handlers)
 │   ├── wk-commit                   # git commit wrapper with session + touched trailers
 │   ├── wk-ingest-cc                # find + copy session JSONL into wiki
-│   └── wk-new-project              # scaffold a new project directory
+│   ├── wk-new-project              # scaffold a new project directory
+│   └── wk-open-conv                # conv:// URI handler — open transcript in nvim
 │
 └── wiki-templates/                 # copy into $WIKI_ROOT during bootstrap
     ├── CLAUDE.md                   # master schema — agents read this first
