@@ -163,7 +163,10 @@ cp $REPO/tools/wk-new-project $WIKI_ROOT/tools/wk-new-project
 chmod +x $WIKI_ROOT/tools/wk-*
 ```
 
-Install the `conv://` URI handler (opens conversation transcripts in nvim):
+Install the `conv://` URI handler (opens conversation transcripts in your editor):
+
+> **Before installing:** edit `tools/wk-open-conv` and replace the last `systemd-run` line
+> with your own editor launch command. The file contains examples in the comments.
 
 ```bash
 cp $REPO/tools/wk-open-conv ~/bin/wk-open-conv

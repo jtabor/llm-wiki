@@ -63,22 +63,22 @@ Use `nvim://` for **all** text-based files: source code, markdown, yaml, shell s
 [`dma_init@abc1234`](nvim://motor-controller/src/drivers/dma.c::dma_init@abc1234)
 [`CLAUDE.md`](nvim://llm-wiki/CLAUDE.md)
 [`wiki-session-token.sh`](nvim://llm-wiki/hooks/wiki-session-token.sh)
-[`projects.json:3`](nvim:///home/jtabor/.config/nvim-goto/projects.json/3)
+[`projects.json:3`](nvim:///home/user/.config/myapp/projects.json/3)
 ```
 
 ### PDF References — `zathura://` URIs
 Read the `pdf` skill for URI format. Page numbers are **0-indexed**.
 
 ```markdown
-[p.43](zathura:///home/jtabor/workspace/project/datasheet.pdf/42)
+[p.43](zathura:///home/user/workspace/project/datasheet.pdf/42)
 ```
 
 ### Binary / Arbitrary File References — `file://` URIs
 Use `file://` for anything that isn't a text file or a page-linked PDF: images, spreadsheets, videos, compiled binaries, etc. Obsidian delegates to `xdg-open`, so the system default app opens the file.
 
 ```markdown
-[rtos-survey-2024.pdf](file:///home/jtabor/notes/wiki/raw/papers/rtos-survey-2024.pdf)
-[screenshot.png](file:///home/jtabor/notes/wiki/raw/assets/screenshot.png)
+[rtos-survey-2024.pdf](file:///home/user/notes/wiki/raw/papers/rtos-survey-2024.pdf)
+[screenshot.png](file:///home/user/notes/wiki/raw/assets/screenshot.png)
 ```
 
 ### Conversation References — `conv://` URIs
@@ -166,7 +166,7 @@ One-line summary of the project.
 
 ## [critical] Short title
 Body — what the pitfall is and why it matters.
-[source.pdf](file:///home/jtabor/notes/wiki/raw/papers/source.pdf)
+[source.pdf](file:///home/user/notes/wiki/raw/papers/source.pdf)
 [conv:cc-<token>](conv://cc-<token>)
 - Affected: [`symbol()`](nvim://project/path/to/file.c::symbol) or [`config.yaml:12`](nvim://project/config.yaml/12)
 - Tags: #tag1 #tag2

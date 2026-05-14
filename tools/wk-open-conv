@@ -66,6 +66,9 @@ if [[ ! -f $target ]]; then
 fi
 
 echo "opening: $target"
+# CUSTOMIZE: replace with your editor launcher. Must handle the file path as $1.
+# Example: nvim "$target"
+# Example (Linux desktop, launch detached): systemd-run --user --scope --no-block nvim-wrapper +1 "$target"
 systemd-run --user --scope --no-block /home/jtabor/tools/nvim_opener.sh +1 "$target"
 echo "exit: $?"
 echo "=== done ==="
