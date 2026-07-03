@@ -40,11 +40,13 @@ source ~/.zshrc
 ## Step 3 — Install hooks
 
 ```bash
+REPO=~/tools/llm-wiki   # adjust if you cloned elsewhere
 mkdir -p ~/.claude/hooks ~/.claude/wiki-tokens
 
-cp hooks/wiki-session-token.sh ~/.claude/hooks/
-cp hooks/wiki-archive-session.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/wiki-session-token.sh ~/.claude/hooks/wiki-archive-session.sh
+ln -s "$REPO/hooks/wiki-session-token.sh"       ~/.claude/hooks/wiki-session-token.sh
+ln -s "$REPO/hooks/wiki-archive-session.sh"     ~/.claude/hooks/wiki-archive-session.sh
+ln -s "$REPO/hooks/wiki-allow-safe-commands.sh" ~/.claude/hooks/wiki-allow-safe-commands.sh
+chmod +x "$REPO"/hooks/wiki-*.sh
 ```
 
 ---
@@ -61,6 +63,13 @@ The fragment to merge:
 {
   "cleanupPeriodDays": 365,
   "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/wiki-allow-safe-commands.sh" }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -88,18 +97,18 @@ If you already have other hooks, merge carefully — both arrays need all their 
 
 ```bash
 mkdir -p ~/.claude/agents
-cp agents/wiki-read.md ~/.claude/agents/
-cp agents/wiki-update.md ~/.claude/agents/
+ln -s "$REPO/agents/wiki-read.md"   ~/.claude/agents/wiki-read.md
+ln -s "$REPO/agents/wiki-update.md" ~/.claude/agents/wiki-update.md
 ```
 
 ---
 
-## Step 5b — Install slash command
+## Step 5b — Install slash commands
 
 ```bash
 mkdir -p ~/.claude/commands
-cp commands/wiki-sync.md ~/.claude/commands/
-cp commands/ingest.md ~/.claude/commands/
+ln -s "$REPO/commands/wiki-sync.md" ~/.claude/commands/wiki-sync.md
+ln -s "$REPO/commands/ingest.md"    ~/.claude/commands/ingest.md
 ```
 
 `/wiki-sync` — use at the end of any coding session to record what happened into the wiki. Optionally pass a focus area:
@@ -125,11 +134,9 @@ mkdir -p $WIKI_ROOT/{projects,conversations/claude-code,tools,user,people,_templ
 cd $WIKI_ROOT && git init
 ```
 
-Copy core template files:
+Copy core template files (these are copied, not symlinked — you will edit them in place):
 
 ```bash
-REPO=~/tools/llm-wiki   # adjust if you cloned elsewhere
-
 cp $REPO/wiki-templates/CLAUDE.md       $WIKI_ROOT/CLAUDE.md
 cp $REPO/wiki-templates/index.md        $WIKI_ROOT/index.md
 cp $REPO/wiki-templates/log.md          $WIKI_ROOT/log.md
@@ -157,18 +164,18 @@ EOF
 Install CLI tools into the wiki (so they live with the wiki and are on `$PATH`):
 
 ```bash
-cp $REPO/tools/wk-commit      $WIKI_ROOT/tools/wk-commit
-cp $REPO/tools/wk-ingest-cc   $WIKI_ROOT/tools/wk-ingest-cc
-cp $REPO/tools/wk-new-project $WIKI_ROOT/tools/wk-new-project
-chmod +x $WIKI_ROOT/tools/wk-*
+ln -s "$REPO/tools/wk-commit"      $WIKI_ROOT/tools/wk-commit
+ln -s "$REPO/tools/wk-ingest-cc"   $WIKI_ROOT/tools/wk-ingest-cc
+ln -s "$REPO/tools/wk-new-project" $WIKI_ROOT/tools/wk-new-project
+chmod +x "$REPO"/tools/wk-*
 ```
 
 Install the `conv://` URI handler (opens conversation transcripts in nvim):
 
 ```bash
-cp $REPO/tools/wk-open-conv ~/bin/wk-open-conv
-chmod +x ~/bin/wk-open-conv
-cp $REPO/install/wk-conv-goto.desktop ~/.local/share/applications/
+ln -s "$REPO/tools/wk-open-conv" ~/bin/wk-open-conv
+chmod +x "$REPO/tools/wk-open-conv"
+ln -s "$REPO/install/wk-conv-goto.desktop" ~/.local/share/applications/wk-conv-goto.desktop
 xdg-mime default wk-conv-goto.desktop x-scheme-handler/conv
 ```
 
@@ -223,8 +230,9 @@ llm-wiki/
 ├── settings-fragment.json          # hooks config to merge into settings.json
 │
 ├── hooks/
-│   ├── wiki-session-token.sh       # → ~/.claude/hooks/
-│   └── wiki-archive-session.sh     # → ~/.claude/hooks/
+│   ├── wiki-session-token.sh           # → ~/.claude/hooks/
+│   ├── wiki-archive-session.sh         # → ~/.claude/hooks/
+│   └── wiki-allow-safe-commands.sh     # → ~/.claude/hooks/ (PreToolUse allowlist)
 │
 ├── agents/
 │   ├── wiki-read.md                # → ~/.claude/agents/
