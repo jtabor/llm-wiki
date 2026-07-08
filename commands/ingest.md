@@ -36,7 +36,7 @@ Before reading anything substantial, restate your interpretation in one or two l
 
 > "I'll pull from: `<source A>`, `<source B>`, and this conversation about `<topic>`. Output as `<discrete facts | overview page>` under `<project guess>`. Go?"
 
-This is cheap insurance against a misread — especially before reading a whole directory. Accept corrections, then proceed. The project-selection and final-plan gates still backstop you.
+This is cheap insurance against a misread — especially before reading a whole directory. Accept corrections, then proceed. The project-selection and final-plan gates still backstop you.  In general spec files used to generate features are ephemeral, so specifically ask the user about `.md` files that look like specs.
 
 ---
 
