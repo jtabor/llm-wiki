@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# wk-autonomous — run the wiki's self-curation unattended (cron / systemd timer).
+#
+# Sets the environment cron does NOT give you (WIKI_ROOT, PATH), pins a known
+# session id so commits carry a correct token without an interactive prompt,
+# serializes runs with a lock, logs outside the repo, and pushes if a remote
+# exists.
+#
+# Usage: wk-autonomous <mode>
+#   reflect   run a wiki-reflect health-check pass
+#   ingest    ingest everything in $WIKI_ROOT/inbox (no-op if empty)
+#   all       ingest then reflect   (default)
+#
+# Env:
+#   WIKI_ROOT   defaults to ~/notes/wiki
+#   CLAUDE_BIN  path to the claude CLI (default: claude on PATH)
+set -euo pipefail
+
+MODE="${1:-all}"
+
+# --- environment cron won't have -------------------------------------------
+export WIKI_ROOT="${WIKI_ROOT:-$HOME/notes/wiki}"
+# ~/.local/bin covers the common `claude` install location under cron's bare PATH.
+export PATH="$WIKI_ROOT/tools:$HOME/.local/bin:$PATH"
+CLAUDE_BIN="${CLAUDE_BIN:-claude}"
+
+if [ ! -d "$WIKI_ROOT/.git" ]; then
+    echo "wk-autonomous: \$WIKI_ROOT ($WIKI_ROOT) is not a git repo" >&2
+    exit 1
+fi
+if ! command -v "$CLAUDE_BIN" >/dev/null 2>&1; then
+    echo "wk-autonomous: claude CLI not found (set CLAUDE_BIN)" >&2
+    exit 1
+fi
+
+# --- state / logs live OUTSIDE the repo (so git add -A never commits them) --
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/wk-autonomous"
+mkdir -p "$STATE_DIR"
+LOCK="$STATE_DIR/lock"
+LOG="$STATE_DIR/$(date +%Y-%m-%d)-$MODE.log"
+
+# --- serialize: never let two autonomous runs overlap ----------------------
+exec 9>"$LOCK"
+if ! flock -n 9; then
+    echo "wk-autonomous: another run holds the lock, exiting" >&2
+    exit 0
+fi
+
+# --- pin a known session id so the token is correct with no interactive read
+if command -v uuidgen >/dev/null 2>&1; then
+    SID="$(uuidgen)"
+else
+    SID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
+fi
+export WIKI_SESSION_TOKEN="cc-$SID"   # wk-commit fallback; model's --session still wins
+
+run_claude() {
+    local prompt="$1"
+    # --session-id makes the archived transcript land at conversations/.../<SID>.jsonl
+    # and keeps WIKI_SESSION_TOKEN in agreement with the real session.
+    "$CLAUDE_BIN" -p "$prompt" \
+        --session-id "$SID" \
+        --dangerously-skip-permissions \
+        >>"$LOG" 2>&1
+}
+
+log() { echo "[$(date -Is)] $*" | tee -a "$LOG" >&2; }
+
+do_ingest() {
+    local inbox="$WIKI_ROOT/inbox"
+    if [ -d "$inbox" ] && [ -n "$(ls -A "$inbox" 2>/dev/null)" ]; then
+        log "ingest: inbox has material, running /curate"
+        run_claude "/curate inbox"
+    else
+        log "ingest: inbox empty, skipping"
+    fi
+}
+
+do_reflect() {
+    log "reflect: running wiki-reflect pass"
+    run_claude "Use the wiki-reflect subagent to run a full wiki reflection pass on the wiki now. Fix what is unambiguous, queue the rest to needs-human.md, and commit."
+}
+
+case "$MODE" in
+    ingest)  do_ingest ;;
+    reflect) do_reflect ;;
+    all)     do_ingest; do_reflect ;;
+    *) echo "wk-autonomous: unknown mode '$MODE' (use: ingest | reflect | all)" >&2; exit 1 ;;
+esac
+
+# --- back up off the SD card if a remote is configured ---------------------
+if git -C "$WIKI_ROOT" remote | grep -q .; then
+    BRANCH="$(git -C "$WIKI_ROOT" symbolic-ref --short HEAD 2>/dev/null || echo main)"
+    if git -C "$WIKI_ROOT" push origin "$BRANCH" >>"$LOG" 2>&1; then
+        log "push: origin/$BRANCH ok"
+    else
+        log "push: FAILED (see log) — commits are safe locally"
+    fi
+else
+    log "push: no remote configured, skipping (consider adding one — SD cards die)"
+fi
+
+log "done ($MODE)"
