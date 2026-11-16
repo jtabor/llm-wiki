@@ -21,4 +21,4 @@ Read `$WIKI_ROOT/CLAUDE.md` first. Follow all conventions defined there.
 - If the caller gave you a session token, use `cc-<token>` in all refs and commit trailers
 
 **When finished:**
-Run `wk-commit <prefix> '<summary>'` with the appropriate prefix (`ingest`, `update`, `query`, `pitfall`, `move`, `reflect`, `init`). Include `--session cc-<token>` if you have a token. Report back to the caller which pages were created and which were modified.
+Run `wk-commit <prefix> '<summary>'` with the appropriate prefix (`ingest`, `update`, `query`, `pitfall`, `move`, `reflect`, `init`). Include `--session cc-<token>` if you have a token. `wk-commit` stages everything in the wiki; that is intended. Uncommitted transcripts from earlier sessions (e.g. `conversations/claude-code/`) and other pending changes always belong in the current commit — commits are just history, batching is fine, so don't split them out or flag them. Report back to the caller which pages were created and which were modified.
